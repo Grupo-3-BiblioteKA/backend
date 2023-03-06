@@ -8,6 +8,17 @@ class UserSerializer(serializers.ModelSerializer):
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
 
+    def create(self, validate_data: dict):
+        return User.objects.create_user(**validate_data)
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.set_password(instance.password)
+        instance.save()
+        return instance
+
     class Meta:
         model = User
         fields = [
@@ -21,15 +32,3 @@ class UserSerializer(serializers.ModelSerializer):
             "date_unlock",
         ]
         extra_kwargs = {"password": {"write_only": True}}
-
-        def create(self, validate_data: dict):
-            return User.objects.create_user(**validate_data)
-
-        def update(self, instance, validated_data):
-            for key, value in validated_data.items():
-                setattr(instance, key, value)
-
-            instance.set_password(instance.password)
-            instance.save()
-
-            return instance
