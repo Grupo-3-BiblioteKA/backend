@@ -31,17 +31,6 @@ class LoanView(CreateAPIView):
     queryset = Loans.objects.all()
     serializer_class = LoanSerializer
 
-    # def create(self, request, *args, **kwargs):
-    #     import ipdb
-    #     book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
-    #     copy_borrow = Copy.objects.filter(status='Available', book=book_found).first()
-    #     copy_borrow.status = 'Borrowed'
-    #     copy_borrow.user.add(request.user)
-    #     print(copy_borrow)
-    #     copy_borrow.save()
-            
-    #     return Response('Olá')
-
     def perform_create(self, serializer):
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
         copy_borrow = Copy.objects.filter(status='Available', book=book_found).first()
