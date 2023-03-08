@@ -28,8 +28,13 @@ class LoanSerializer(serializers.ModelSerializer):
 
     def get_date_expected_devolution(self, obj: Loans):
         date_now = obj.date_loan
-        dead_line = timedelta(days=15)
-        return date_now + dead_line
+        dead_line = timedelta(days=18)
+        date_sum = date_now + dead_line
+        if date_sum.weekday() == 5:
+            return date_sum + timedelta(days=2)
+        elif date_sum.weekday() == 6:
+            return date_sum + timedelta(days=1)
+        return date_sum
 
     def create(self, validated_data):
         
