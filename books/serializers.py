@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Book
+from .models import Book, Follow
 from copies.models import Copy
 
 
@@ -22,3 +22,20 @@ class BookSerializer(serializers.ModelSerializer):
 
         # ipdb.set_trace()
         return new_book
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    book = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Follow
+        fields = ["id", "book", "user"]
+
+    def get_book(self, validated_data: dict):
+        book = validated_data.book.id
+        return book
+
+    def get_user(self, validated_data: dict):
+        user = validated_data.user.id
+        return user
