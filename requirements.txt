@@ -18,6 +18,7 @@ pure-eval==0.2.2
 pycodestyle==2.10.0
 Pygments==2.14.0
 PyJWT==2.6.0
+python-dotenv==1.0.0
 pytz==2022.7.1
 six==1.16.0
 sqlparse==0.4.3
