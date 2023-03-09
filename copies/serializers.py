@@ -3,7 +3,6 @@ from .models import Copy, Loans
 from books.serializers import BookSerializer
 
 
-
 class CopySerializer(serializers.ModelSerializer):
     book = BookSerializer(read_only=True)
 

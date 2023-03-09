@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import status
 from rest_framework.exceptions import APIException
 from .models import Copy, Loans
-from books.models import Book
+from books.models import Book, Follow
 from users.models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from users.permissions import IsCollaborator
@@ -26,7 +26,8 @@ from rest_framework.generics import ListAPIView, RetrieveDestroyAPIView, CreateA
 from . serializers import CopySerializer, LoanSerializer
 from django.shortcuts import get_object_or_404
 from datetime import timedelta, datetime
-
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class CopyView(ListAPIView):
@@ -56,12 +57,23 @@ class LoanView(CreateAPIView):
 
         # copy_borrow = Copy.objects.filter(status="Available", book=book_found).first()
         copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
-        # if not copy_borrow:
-
+        all_copies = Copy.objects.filter(status='Available', book=book_found).all()
+        followers_book = Follow.objects.filter(book=book_found).all()
+        followers_list = ['gabrielacamarchiori@gmail.com']
+        for follower in followers_book:
+            user = User.objects.filter(id=follower.user_id).first()
+            followers_list.append(user.email)
+        
         copy_borrow.status = "Borrowed"
 
         copy_borrow.save()
         user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
+        
+        # if len(all_copies) == 0:
+        #     error = APIException(detail='Não temos mais cópias disponíveis', code='unavailable')
+        #     error.status_code = status.HTTP_404_NOT_FOUND
+        #     raise error
+
         if user_found.date_unlock:
             if user_found.date_unlock <= datetime.now().date():
                 user_found.date_unlock = None
@@ -71,6 +83,14 @@ class LoanView(CreateAPIView):
                 exception = APIException(detail="User block", code="Blocked")
                 exception.status_code = status.HTTP_401_UNAUTHORIZED
                 raise exception
+        send_mail(
+            subject='Status de livro seguido',
+            message=f'Uma cópia do livro "{book_found.name}" foi emprestada, ainda temos {len(all_copies)} cópias disponíveis',
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=followers_list,
+            fail_silently=False
+        )
+
         return serializer.save(copy=copy_borrow, user=user_found)
 
 
