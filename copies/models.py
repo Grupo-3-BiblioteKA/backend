@@ -42,5 +42,7 @@ class Loans(models.Model):
         "copies.Copy", on_delete=models.CASCADE, related_name="loan_copy"
     )
     date_loan = models.DateField(auto_now_add=True)
+
     date_expected_devolution = models.DateField(default=get_date_expected_devolution())
+
     date_devolution = models.DateField(null=True)

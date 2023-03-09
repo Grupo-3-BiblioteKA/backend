@@ -8,3 +8,4 @@ urlpatterns = [
     path("books/loan/", views.LoanListView.as_view()),
     path("books/devolution/<int:loan_id>", views.LoanDetailView.as_view()),
 ]
+

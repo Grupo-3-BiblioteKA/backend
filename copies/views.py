@@ -1,3 +1,7 @@
+
+from django.shortcuts import render
+from rest_framework.response import Response
+
 from rest_framework.views import status
 from rest_framework.exceptions import APIException
 from .models import Copy, Loans
@@ -5,6 +9,7 @@ from books.models import Book
 from users.models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from users.permissions import IsCollaborator
+
 from rest_framework.generics import (
     ListAPIView,
     RetrieveDestroyAPIView,
@@ -16,6 +21,12 @@ from .serializers import CopySerializer, LoanSerializer
 from django.shortcuts import get_object_or_404, get_list_or_404
 from datetime import datetime, timedelta
 from rest_framework.views import Response
+
+from rest_framework.generics import ListAPIView, RetrieveDestroyAPIView, CreateAPIView, UpdateAPIView, ListCreateAPIView
+from . serializers import CopySerializer, LoanSerializer
+from django.shortcuts import get_object_or_404
+from datetime import timedelta, datetime
+
 
 
 class CopyView(ListAPIView):
@@ -42,11 +53,13 @@ class LoanView(CreateAPIView):
 
     def perform_create(self, serializer):
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
+
         # copy_borrow = Copy.objects.filter(status="Available", book=book_found).first()
         copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
         # if not copy_borrow:
 
         copy_borrow.status = "Borrowed"
+
         copy_borrow.save()
         user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
         if user_found.date_unlock:

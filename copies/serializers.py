@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Copy, Loans
-
 from books.serializers import BookSerializer
+
 
 
 class CopySerializer(serializers.ModelSerializer):
@@ -42,3 +42,4 @@ class LoanSerializer(serializers.ModelSerializer):
             "date_expected_devolution",
             "date_devolution",
         ]
+
