@@ -110,11 +110,21 @@ class LoanDetailView(UpdateAPIView):
     lookup_url_kwarg = "loan_id"
 
     def perform_update(self, serializer):
+        import ipdb
         loan_found = get_object_or_404(
             Loans, id=self.kwargs.get("loan_id"), date_devolution=None
         )
         copy = get_object_or_404(Copy, id=loan_found.copy_id)
         user = get_object_or_404(User, id=loan_found.user_id)
+        copy_found = Copy.objects.filter(id=copy.id).first()
+        book_found = Book.objects.filter(id=copy_found.book_id).first()
+        all_copies = Copy.objects.filter(status='Available', book=book_found.id).all()
+        followers_book = Follow.objects.filter(book=book_found).all()
+        followers_list = ['gabrielacamarchiori@gmail.com']
+        
+        for follower in followers_book:
+            user = User.objects.filter(id=follower.user_id).first()
+            followers_list.append(user.email)
 
         copy.status = "Available"
         copy.save()
@@ -122,6 +132,14 @@ class LoanDetailView(UpdateAPIView):
         if loan_found.date_expected_devolution < datetime.now().date():
             user.date_unlock = datetime.now().date() + timedelta(days=7)
             user.save()
+        
+        send_mail(
+            subject='Status de livro seguido',
+            message=f'Uma cópia do livro "{book_found.name}" foi devolvida, agora nós temos {len(all_copies)} cópias disponíveis',
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=followers_list,
+            fail_silently=False
+        )
 
         return serializer.save(date_devolution=datetime.now().date())
 
