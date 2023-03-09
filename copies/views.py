@@ -1,5 +1,7 @@
+
 from django.shortcuts import render
 from rest_framework.response import Response
+
 from rest_framework.views import status
 from rest_framework.exceptions import APIException
 from .models import Copy, Loans
@@ -7,10 +9,24 @@ from books.models import Book
 from users.models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from users.permissions import IsCollaborator
+
+from rest_framework.generics import (
+    ListAPIView,
+    RetrieveDestroyAPIView,
+    CreateAPIView,
+    UpdateAPIView,
+    ListCreateAPIView,
+)
+from .serializers import CopySerializer, LoanSerializer
+from django.shortcuts import get_object_or_404, get_list_or_404
+from datetime import datetime, timedelta
+from rest_framework.views import Response
+
 from rest_framework.generics import ListAPIView, RetrieveDestroyAPIView, CreateAPIView, UpdateAPIView, ListCreateAPIView
 from . serializers import CopySerializer, LoanSerializer
 from django.shortcuts import get_object_or_404
 from datetime import timedelta, datetime
+
 
 
 class CopyView(ListAPIView):
@@ -37,8 +53,13 @@ class LoanView(CreateAPIView):
 
     def perform_create(self, serializer):
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
-        copy_borrow = Copy.objects.filter(status='Available', book=book_found).first()
-        copy_borrow.status = 'Borrowed'
+
+        # copy_borrow = Copy.objects.filter(status="Available", book=book_found).first()
+        copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
+        # if not copy_borrow:
+
+        copy_borrow.status = "Borrowed"
+
         copy_borrow.save()
         user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
         if user_found.date_unlock:
@@ -66,24 +87,43 @@ class LoanDetailView(UpdateAPIView):
     queryset = Loans.objects.all()
     serializer_class = LoanSerializer
 
-    lookup_url_kwarg = "user_id"
-    lookup_url_kwarg = 'book_id'
+    lookup_url_kwarg = "loan_id"
 
     def perform_update(self, serializer):
-        # loan_found = get_object_or_404(Loans, id)
-        user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
-        book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
-        user_copy = serializer.data['copy_id']
-        copy_found = Copy.objects.filter(id=user_copy, book=book_found).first()
-        today = datetime.now().date()
+        loan_found = get_object_or_404(
+            Loans, id=self.kwargs.get("loan_id"), date_devolution=None
+        )
+        copy = get_object_or_404(Copy, id=loan_found.copy_id)
+        user = get_object_or_404(User, id=loan_found.user_id)
 
-        # serializer = LoanSerializer(Loans, self.request.data, partial=True)
-        
-        if serializer.data['date_expected_devolution'] > today:
-            user_found.date_unlock = today + timedelta(days=10)
-            user_found.save()
-        else:
-            serializer.data['date_expected_devolution'] = None
-            copy_found.status = 'Available'
-            copy_found.save()
-        return serializer.save(copy=copy_found, user=user_found)
+        copy.status = "Available"
+        copy.save()
+
+        if loan_found.date_expected_devolution < datetime.now().date():
+            user.date_unlock = datetime.now().date() + timedelta(days=7)
+            user.save()
+
+        return serializer.save(date_devolution=datetime.now().date())
+
+
+class BookCopyView(ListCreateAPIView):
+    lookup_url_kwarg = "book_id"
+    queryset = Copy.objects.all()
+    serializer_class = CopySerializer
+
+    def perform_create(self, serializer):
+        book_id = self.kwargs.get("book_id")
+        book_obj = get_object_or_404(Book, id=book_id)
+
+        return serializer.save(book=book_obj)
+
+    def list(self, request, *args, **kwargs):
+        queryset = Copy.objects.filter(book_id=self.kwargs.get("book_id"))
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

@@ -6,5 +6,6 @@ urlpatterns = [
     path("books/copies/<int:copy_id>", views.CopyViewDetail.as_view()),
     path("books/<int:book_id>/loan/<str:user_id>", views.LoanView.as_view()),
     path("books/loan/", views.LoanListView.as_view()),
-    path("books/<int:book_id>/devolution/<str:user_id>", views.LoanDetailView.as_view()),
+    path("books/devolution/<int:loan_id>", views.LoanDetailView.as_view()),
 ]
+
