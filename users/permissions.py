@@ -5,7 +5,7 @@ from rest_framework.views import View
 
 class IsAccountOwner(permissions.BasePermission):
     def has_object_permission(self, request, view: View, obj: User) -> bool:
-        if request.user.is_autheticated:
+        if request.user.is_authenticated:
             return request.user.is_superuser or request.user == obj
         return False
 
