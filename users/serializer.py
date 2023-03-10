@@ -30,6 +30,12 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "is_superuser",
             "date_unlock",
-            "is_active"
         ]
         extra_kwargs = {"password": {"write_only": True}}
+
+
+class UserSerializerStatus(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["date_unlock"]
+        read_only_fields = ["date_unlock"]
