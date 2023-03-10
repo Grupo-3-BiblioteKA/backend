@@ -6,14 +6,19 @@ from .serializers import BookSerializer, FollowSerializer
 from copies.models import Copy
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from users.permissions import IsCollaboratorOrAnyone
 
 
 class BookView(generics.ListCreateAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsCollaboratorOrAnyone]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
 
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsCollaboratorOrAnyone]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
