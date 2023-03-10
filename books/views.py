@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
+from rest_framework.exceptions import APIException
 from .models import Book, Follow
 from .serializers import BookSerializer, FollowSerializer
 from copies.models import Copy
@@ -36,7 +37,11 @@ class BookFollowView(generics.ListCreateAPIView):
         book = get_object_or_404(Book, pk=self.kwargs["book_id"])
         follow_found = Follow.objects.filter(book=book.id, user=self.request.user.id)
         if follow_found:
-            raise serializer.ValidationError("User alredy follows this book")
+            exception = APIException(
+                detail="User alredy follows this book", code="Blocked"
+            )
+            exception.status_code = 409
+            raise exception
         return serializer.save(user=self.request.user, book=book)
 
     def get_queryset(self):
