@@ -2,9 +2,9 @@ from django.shortcuts import render
 from .models import User
 from copies.models import Loans
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, ListAPIView, RetrieveAPIView
 from .permissions import IsAccountOwner, IsCollaborator
-from .serializer import UserSerializer
+from .serializer import UserSerializer, UserSerializerStatus
 from copies.serializers import LoanSerializer
 from django.shortcuts import get_object_or_404
 
@@ -31,3 +31,11 @@ class UserLoanView(ListAPIView):
 
     def get_queryset(self):
         return Loans.objects.filter(user_id=self.kwargs.get("pk"))
+
+
+class UserStatus(RetrieveAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsCollaborator]
+    
+    queryset = User.objects.all()
+    serializer_class = UserSerializerStatus
