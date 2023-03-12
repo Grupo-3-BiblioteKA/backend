@@ -1,23 +1,25 @@
-from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from rest_framework.generics import (
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+    DestroyAPIView,
+)
 from rest_framework.exceptions import APIException
 from .models import Book, Follow
 from .serializers import BookSerializer, FollowSerializer
-from copies.models import Copy
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsCollaboratorOrAnyone
 
 
-class BookView(generics.ListCreateAPIView):
+class BookView(ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaboratorOrAnyone]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
 
 
-class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
+class BookDetailView(RetrieveUpdateDestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaboratorOrAnyone]
     queryset = Book.objects.all()
@@ -26,7 +28,7 @@ class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_url_kwarg = "book_id"
 
 
-class BookFollowView(generics.ListCreateAPIView):
+class BookFollowView(ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     lookup_url_kwarg = "book_id"
@@ -49,7 +51,7 @@ class BookFollowView(generics.ListCreateAPIView):
         return Follow.objects.filter(book=book.id)
 
 
-class BookFollowDetailView(generics.DestroyAPIView):
+class BookFollowDetailView(DestroyAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = Follow.objects.all()

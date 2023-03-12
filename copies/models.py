@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import timedelta, datetime
+from datetime import timedelta
 from django.utils import timezone
 
 
