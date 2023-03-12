@@ -1,5 +1,3 @@
-
-from django.shortcuts import render
 from rest_framework.exceptions import APIException
 from .models import Copy, Loans
 from books.models import Book, Follow
@@ -46,24 +44,18 @@ class LoanView(CreateAPIView):
     def perform_create(self, serializer):
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
 
-        # copy_borrow = Copy.objects.filter(status="Available", book=book_found).first()
         copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
-        all_copies = Copy.objects.filter(status='Available', book=book_found).all()
+        all_copies = Copy.objects.filter(status="Available", book=book_found).all()
         followers_book = Follow.objects.filter(book=book_found).all()
-        followers_list = ['gabrielacamarchiori@gmail.com']
+        followers_list = ["gabrielacamarchiori@gmail.com"]
         for follower in followers_book:
             user = User.objects.filter(id=follower.user_id).first()
             followers_list.append(user.email)
-        
+
         copy_borrow.status = "Borrowed"
 
         copy_borrow.save()
         user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
-        
-        # if len(all_copies) == 0:
-        #     error = APIException(detail='Não temos mais cópias disponíveis', code='unavailable')
-        #     error.status_code = status.HTTP_404_NOT_FOUND
-        #     raise error
 
         if user_found.date_unlock:
             if user_found.date_unlock <= datetime.now().date():
@@ -74,23 +66,23 @@ class LoanView(CreateAPIView):
                 exception = APIException(detail="User block", code="Blocked")
                 exception.status_code = status.HTTP_401_UNAUTHORIZED
                 raise exception
-        
+
         if len(all_copies) <= 3 and len(all_copies) > 0:
             send_mail(
-                subject='Status de livro seguido',
+                subject="Status de livro seguido",
                 message=f' O Livro "{book_found.name}" está com uma grande saída de empréstimo, como sabemos que você é fã dele, gostaríamos de te avisar que caso tenha interesse em alugá-lo em nossa BiblioteKa corra porque só temos {len(all_copies)} cópia(s) disponível(is)',
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=followers_list,
-                fail_silently=False
+                fail_silently=False,
             )
-        
+
         if len(all_copies) == 0:
             send_mail(
-                subject='Status de livro seguido',
-                message=f' Todas as cópias do "{book_found.name}" foram empretadas, assim que uma cópia ficar disponível enviaremos um e-mail para te avisar!',
+                subject="Status de livro seguido",
+                message=f' Todas as cópias do "{book_found.name}" foram emprestadas, assim que uma cópia ficar disponível enviaremos um e-mail para te avisar!',
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=followers_list,
-                fail_silently=False
+                fail_silently=False,
             )
 
         return serializer.save(copy=copy_borrow, user=user_found)
@@ -119,10 +111,10 @@ class LoanDetailView(UpdateAPIView):
         user = get_object_or_404(User, id=loan_found.user_id)
         copy_found = Copy.objects.filter(id=copy.id).first()
         book_found = Book.objects.filter(id=copy_found.book_id).first()
-        all_copies = Copy.objects.filter(status='Available', book=book_found.id).all()
+        all_copies = Copy.objects.filter(status="Available", book=book_found.id).all()
         followers_book = Follow.objects.filter(book=book_found).all()
-        followers_list = ['gabrielacamarchiori@gmail.com']
-        
+        followers_list = ["gabrielacamarchiori@gmail.com"]
+
         for follower in followers_book:
             user = User.objects.filter(id=follower.user_id).first()
             followers_list.append(user.email)
@@ -133,14 +125,14 @@ class LoanDetailView(UpdateAPIView):
         if loan_found.date_expected_devolution < datetime.now().date():
             user.date_unlock = datetime.now().date() + timedelta(days=7)
             user.save()
-        
+
         if len(all_copies) == 1:
             send_mail(
-                subject='Status de livro seguido',
+                subject="Status de livro seguido",
                 message=f'Uma cópia do livro "{book_found.name}" foi devolvida, agora nós temos {len(all_copies)} cópia disponível',
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=followers_list,
-                fail_silently=False
+                fail_silently=False,
             )
 
         return serializer.save(date_devolution=datetime.now().date())

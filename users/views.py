@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .models import User
 from copies.models import Loans
 from books.models import Follow
