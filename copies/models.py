@@ -29,11 +29,11 @@ class Copy(models.Model):
     )
 
     user = models.ManyToManyField(
-        "users.User", through="copies.Loans", related_name="copies"
+        "users.User", through="copies.Loan", related_name="copies"
     )
 
 
-class Loans(models.Model):
+class Loan(models.Model):
     user = models.ForeignKey(
         "users.User", on_delete=models.CASCADE, related_name="loan_user"
     )
