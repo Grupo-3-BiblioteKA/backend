@@ -1,5 +1,5 @@
 from .models import User
-from copies.models import Loans
+from copies.models import Loan
 from books.models import Follow
 from books.serializers import FollowSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -37,7 +37,7 @@ class UserLoanView(ListAPIView):
 
     def get_queryset(self):
         user = get_object_or_404(User, pk=self.kwargs.get("pk"))
-        return Loans.objects.filter(user_id=user.id)
+        return Loan.objects.filter(user_id=user.id)
 
 
 class UserStatus(RetrieveAPIView):

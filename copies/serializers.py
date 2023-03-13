@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Copy, Loans
+from .models import Copy, Loan
 from books.serializers import BookSerializer, BookSimpleSerializer
 from books.models import Book
 
@@ -28,7 +28,7 @@ class LoanSerializer(serializers.ModelSerializer):
     book = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = Loans
+        model = Loan
         fields = [
             "id",
             "copy_id",
@@ -46,7 +46,7 @@ class LoanSerializer(serializers.ModelSerializer):
             "date_devolution",
         ]
 
-    def get_book(self, instance: Loans):
+    def get_book(self, instance: Loan):
         book = Book.objects.get(copies__id=instance.copy_id)
         book_serialized = BookSimpleSerializer(book)
         # import ipdb

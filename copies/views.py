@@ -1,5 +1,5 @@
 from rest_framework.exceptions import APIException
-from .models import Copy, Loans
+from .models import Copy, Loan
 from books.models import Book, Follow
 from users.models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -38,7 +38,7 @@ class CopyViewDetail(RetrieveDestroyAPIView):
 class LoanView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaborator]
-    queryset = Loans.objects.all()
+    queryset = Loan.objects.all()
     serializer_class = LoanSerializer
 
     def perform_create(self, serializer):
@@ -91,21 +91,21 @@ class LoanView(CreateAPIView):
 class LoanListView(ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaborator]
-    queryset = Loans.objects.filter(date_devolution=None)
+    queryset = Loan.objects.filter(date_devolution=None)
     serializer_class = LoanSerializer
 
 
 class LoanDetailView(UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaborator]
-    queryset = Loans.objects.all()
+    queryset = Loan.objects.all()
     serializer_class = LoanSerializer
 
     lookup_url_kwarg = "loan_id"
 
     def perform_update(self, serializer):
         loan_found = get_object_or_404(
-            Loans, id=self.kwargs.get("loan_id"), date_devolution=None
+            Loan, id=self.kwargs.get("loan_id"), date_devolution=None
         )
         copy = get_object_or_404(Copy, id=loan_found.copy_id)
         user = get_object_or_404(User, id=loan_found.user_id)
