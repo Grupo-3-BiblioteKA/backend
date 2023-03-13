@@ -42,9 +42,25 @@ class LoanView(CreateAPIView):
     serializer_class = LoanSerializer
 
     def perform_create(self, serializer):
+        import ipdb
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
-
         copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
+        book_copies = Copy.objects.filter(book_id=book_found).all()
+        user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
+        my_copies = []
+        my_loans = []
+        for b in book_copies:
+            my_copies.append(b.id)
+        loan_user = Loan.objects.filter(user_id=user_found.id).all()
+        for loans in loan_user:
+            if loans.date_devolution is None:
+                my_loans.append(loans.copy_id)
+        for c in my_copies:
+            for lo in my_loans:
+                if c == lo:
+                    exception = APIException(detail="You already have a copy of this book", code="Blocked")
+                    exception.status_code = status.HTTP_409_CONFLICT
+                    raise exception
         all_copies = Copy.objects.filter(status="Available", book=book_found).all()
         followers_book = Follow.objects.filter(book=book_found).all()
         followers_list = ["gabrielacamarchiori@gmail.com"]
@@ -55,7 +71,6 @@ class LoanView(CreateAPIView):
         copy_borrow.status = "Borrowed"
 
         copy_borrow.save()
-        user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
 
         if user_found.date_unlock:
             if user_found.date_unlock <= datetime.now().date():
