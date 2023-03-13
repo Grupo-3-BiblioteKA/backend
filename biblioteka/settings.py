@@ -41,7 +41,7 @@ if RAILWAY_STATIC_URL:
 
 # Application definition
 
-MY_APPS = ["users", "books", "copies"]
+MY_APPS = ["users", "books", "copies", "drf_spectacular"]
 
 THIRD_PARTY_APPS = ["rest_framework"]
 
@@ -166,6 +166,15 @@ SIMPLE_JWT = {
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 5,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BiblioteKA API',
+    'DESCRIPTION': 'This API is a library system. It is possible to follow favorite books, pick up and return books. In addition, there is a system for registering users and registering books, both with the possibility of deleting, updating and listing the objects in question.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': True,
+    # OTHER SETTINGS
 }
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

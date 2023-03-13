@@ -28,8 +28,8 @@ class UserDetailView(RetrieveUpdateDestroyAPIView):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-
+    
+    
 class UserLoanView(ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAccountOwner]
