@@ -1,5 +1,5 @@
 from rest_framework.exceptions import APIException
-from .models import Copy, Loans
+from .models import Copy, Loan
 from books.models import Book, Follow
 from users.models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -38,13 +38,29 @@ class CopyViewDetail(RetrieveDestroyAPIView):
 class LoanView(CreateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaborator]
-    queryset = Loans.objects.all()
+    queryset = Loan.objects.all()
     serializer_class = LoanSerializer
 
     def perform_create(self, serializer):
+        import ipdb
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
-
         copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
+        book_copies = Copy.objects.filter(book_id=book_found).all()
+        user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
+        my_copies = []
+        my_loans = []
+        for b in book_copies:
+            my_copies.append(b.id)
+        loan_user = Loan.objects.filter(user_id=user_found.id).all()
+        for loans in loan_user:
+            if loans.date_devolution is None:
+                my_loans.append(loans.copy_id)
+        for c in my_copies:
+            for lo in my_loans:
+                if c == lo:
+                    exception = APIException(detail="You already have a copy of this book", code="Blocked")
+                    exception.status_code = status.HTTP_409_CONFLICT
+                    raise exception
         all_copies = Copy.objects.filter(status="Available", book=book_found).all()
         followers_book = Follow.objects.filter(book=book_found).all()
         followers_list = ["gabrielacamarchiori@gmail.com"]
@@ -55,7 +71,6 @@ class LoanView(CreateAPIView):
         copy_borrow.status = "Borrowed"
 
         copy_borrow.save()
-        user_found = get_object_or_404(User, id=self.kwargs.get("user_id"))
 
         if user_found.date_unlock:
             if user_found.date_unlock <= datetime.now().date():
@@ -91,21 +106,21 @@ class LoanView(CreateAPIView):
 class LoanListView(ListAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaborator]
-    queryset = Loans.objects.filter(date_devolution=None)
+    queryset = Loan.objects.filter(date_devolution=None)
     serializer_class = LoanSerializer
 
 
 class LoanDetailView(UpdateAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsCollaborator]
-    queryset = Loans.objects.all()
+    queryset = Loan.objects.all()
     serializer_class = LoanSerializer
 
     lookup_url_kwarg = "loan_id"
 
     def perform_update(self, serializer):
         loan_found = get_object_or_404(
-            Loans, id=self.kwargs.get("loan_id"), date_devolution=None
+            Loan, id=self.kwargs.get("loan_id"), date_devolution=None
         )
         copy = get_object_or_404(Copy, id=loan_found.copy_id)
         user = get_object_or_404(User, id=loan_found.user_id)
@@ -145,19 +160,18 @@ class BookCopyView(ListCreateAPIView):
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
 
-    def perform_create(self, serializer):
-        book_id = self.kwargs.get("book_id")
-        book_obj = get_object_or_404(Book, id=book_id)
+    def post(self, request, *args, **kwargs):
+        serializer = CopySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        return serializer.save(book=book_obj)
+        copies_qtd = serializer.validated_data.pop("copies")
 
-    def list(self, request, *args, **kwargs):
-        queryset = Copy.objects.filter(book_id=self.kwargs.get("book_id"))
+        book = get_object_or_404(Book, id=kwargs["book_id"])
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        new_copies = [Copy(book=book) for _ in range(copies_qtd)]
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        copies_created = Copy.objects.bulk_create(new_copies)
+
+        serializer = CopySerializer(copies_created, many=True)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
