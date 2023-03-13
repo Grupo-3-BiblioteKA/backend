@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
 from .models import Book, Follow
 from copies.models import Copy
 
@@ -22,6 +23,13 @@ class BookSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         copies = validated_data.pop("copies")
+
+        book = Book.objects.filter(**validated_data)
+
+        if book:
+            exception = APIException(detail="This book already exists", code="Blocked")
+            exception.status_code = 403
+            raise exception
 
         new_book = Book.objects.create(**validated_data)
 
