@@ -145,19 +145,18 @@ class BookCopyView(ListCreateAPIView):
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
 
-    def perform_create(self, serializer):
-        book_id = self.kwargs.get("book_id")
-        book_obj = get_object_or_404(Book, id=book_id)
+    def post(self, request, *args, **kwargs):
+        serializer = CopySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        return serializer.save(book=book_obj)
+        copies_qtd = serializer.validated_data.pop("copies")
 
-    def list(self, request, *args, **kwargs):
-        queryset = Copy.objects.filter(book_id=self.kwargs.get("book_id"))
+        book = get_object_or_404(Book, id=kwargs["book_id"])
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        new_copies = [Copy(book=book) for _ in range(copies_qtd)]
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        copies_created = Copy.objects.bulk_create(new_copies)
+
+        serializer = CopySerializer(copies_created, many=True)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
