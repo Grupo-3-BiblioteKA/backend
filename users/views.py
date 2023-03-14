@@ -9,7 +9,7 @@ from rest_framework.generics import (
     ListAPIView,
     RetrieveAPIView,
 )
-from .permissions import IsAccountOwner, IsCollaborator
+from .permissions import IsAccountOwner, IsCollaborator, IsCollaboratorOrOwner
 from .serializer import UserSerializer, UserSerializerStatus
 from copies.serializers import LoanSerializer
 from django.shortcuts import get_object_or_404
@@ -32,7 +32,7 @@ class UserDetailView(RetrieveUpdateDestroyAPIView):
 
 class UserLoanView(ListAPIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAccountOwner]
+    permission_classes = [IsCollaboratorOrOwner]
     serializer_class = LoanSerializer
 
     def get_queryset(self):
