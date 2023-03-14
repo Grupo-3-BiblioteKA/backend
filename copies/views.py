@@ -43,6 +43,7 @@ class LoanView(CreateAPIView):
 
     def perform_create(self, serializer):
         import ipdb
+
         book_found = get_object_or_404(Book, id=self.kwargs.get("book_id"))
         copy_borrow = get_list_or_404(Copy, status="Available", book=book_found)[0]
         book_copies = Copy.objects.filter(book_id=book_found).all()
@@ -58,7 +59,9 @@ class LoanView(CreateAPIView):
         for c in my_copies:
             for lo in my_loans:
                 if c == lo:
-                    exception = APIException(detail="You already have a copy of this book", code="Blocked")
+                    exception = APIException(
+                        detail="You already have a copy of this book", code="Blocked"
+                    )
                     exception.status_code = status.HTTP_409_CONFLICT
                     raise exception
         all_copies = Copy.objects.filter(status="Available", book=book_found).all()
@@ -155,7 +158,7 @@ class LoanDetailView(UpdateAPIView):
 
 class BookCopyView(ListCreateAPIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsCollaboratorOrAnyone]
+    permission_classes = [IsCollaborator]
     lookup_url_kwarg = "book_id"
     queryset = Copy.objects.all()
     serializer_class = CopySerializer
@@ -175,3 +178,6 @@ class BookCopyView(ListCreateAPIView):
         serializer = CopySerializer(copies_created, many=True)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def get_queryset(self):
+        return get_list_or_404(Copy, book_id=self.kwargs["book_id"])
