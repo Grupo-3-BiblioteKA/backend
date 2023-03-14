@@ -22,3 +22,12 @@ class IsCollaboratorOrAnyone(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return request.user.is_authenticated and request.user.is_superuser
+
+
+class IsCollaboratorOrOwner(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            return (
+                request.user.is_superuser or str(request.user.id) == view.kwargs["pk"]
+            )
+        return False
